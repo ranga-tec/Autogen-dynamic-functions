@@ -235,5 +235,12 @@
     "description": "Tracks personal finance income and expenses then helps the user to analyse it using AutoGen agents.",
     "image": "default.png",
     "tags": ["tools", "app"]
+  },
+  {
+    "title": "AutoGen Dynamic Functions",
+    "link": "https://github.com/uthpala1000/Autogen-dynamic-functions",
+    "description": "Demonstrates how AutoGen agents can dynamically execute functions through conversation and integrate with existing systems.",
+    "image": "default.png",
+    "tags": ["app", "extension"]
   }
 ]
