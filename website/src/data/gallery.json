@@ -238,8 +238,8 @@
   },
   {
     "title": "AutoGen Dynamic Functions",
-    "link": "https://github.com/uthpala1000/Autogen-dynamic-functions",
-    "description": "Demonstrates how AutoGen agents can dynamically execute functions through conversation and integrate with existing systems.",
+    "link": "https://github.com/ranga-tec/Autogen-dynamic-functions",
+    "description": "Demonstrates how AutoGen agents can dynamically execute functions through conversations.",
     "image": "default.png",
     "tags": ["app", "extension"]
   }
