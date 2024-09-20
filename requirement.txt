@@ -1,0 +1,6 @@
+Flask==2.2.3
+Flask-CORS==3.0.10
+pyodbc==4.0.35
+autogen==0.2.0
+python-dotenv==0.21.1
+asyncio==3.4.3

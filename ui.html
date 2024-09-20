@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoGen Inventory Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #chatBox {
+            height: 400px;
+            border: 1px solid #ccc;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: white;
+        }
+        #userInput {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .user {
+            background-color: #e6f3ff;
+            text-align: right;
+        }
+        .assistant {
+            background-color: #f0f0f0;
+        }
+        .system {
+            background-color: #ffe6e6;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>AutoGen Item Manager</h1>
+    <div id="chatBox"></div>
+    <input type="text" id="userInput" placeholder="Type your message...">
+    <button id="sendButton">Send</button>
+    <button id="startChatButton">Start New Chat</button>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const startChatButton = document.getElementById('startChatButton');
+
+        let chatStarted = false;
+        let pollingInterval;
+
+        startChatButton.addEventListener('click', startChat);
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function startChat() {
+            fetch('http://localhost:5008/api/start_chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: "I want to add a new item to the inventory." }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Chat started:', data);
+                chatStarted = true;
+                addMessage('System', 'Chat started. You can now send messages.');
+                startPolling();
+                startChatButton.disabled = true;
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                addMessage('System', 'Error starting chat. Please try again.');
+            });
+        }
+
+        function sendMessage() {
+            if (!chatStarted) {
+                addMessage('System', 'Please start a chat first.');
+                return;
+            }
+
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            addMessage('User', message);
+            
+            fetch('http://localhost:5008/api/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Message sent:', data);
+                userInput.value = '';
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                addMessage('System', 'Error sending message. Please try again.');
+            });
+        }
+
+        function addMessage(sender, message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender.toLowerCase());
+            messageElement.textContent = `${sender}: ${message}`;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function startPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(pollMessages, 1000);
+        }
+
+        function pollMessages() {
+            fetch('http://localhost:5008/api/get_message')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Received data:', data);  // Log all received data
+                if (data.message) {
+                    if (typeof data.message === 'string') {
+                        addMessage('Assistant', data.message);
+                    } else if (data.message.user && data.message.message) {
+                        addMessage(data.message.user, data.message.message);
+                    }
+                }
+                if (data.chat_status === 'ended') {
+                    chatStarted = false;
+                    addMessage('System', 'Chat ended.');
+                    clearInterval(pollingInterval);
+                    startChatButton.disabled = false;
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                addMessage('System', 'Error receiving message. Please check your connection.');
+            });
+        }
+    </script>
+</body>
+</html>
