@@ -3,71 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoGen Inventory Chat</title>
+    <title>Inventory Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
+            margin: 0;
             padding: 20px;
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
         }
-        #chatBox {
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* DataTable Styling */
+        .datatable-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* Chat Window */
+        .chat-container {
+            position: fixed;
+            bottom: 0;
+            right: 20px;
+            width: 350px;
+            background: white;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .chat-header {
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-body {
             height: 400px;
-            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chatBox {
+            flex: 1;
             overflow-y: auto;
             padding: 10px;
-            margin-bottom: 10px;
-            background-color: white;
+            background: #f9f9f9;
         }
-        #userInput {
-            width: 70%;
+
+        .chat-input {
             padding: 10px;
-            margin-right: 10px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
         }
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
+
+        #userInput {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 8px 15px;
             border: none;
+            border-radius: 4px;
             cursor: pointer;
+            color: white;
         }
-        button:hover {
-            background-color: #45a049;
+
+        .btn-primary {
+            background-color: #4CAF50;
         }
+
+        .btn-secondary {
+            background-color: #666;
+        }
+
         .message {
             margin-bottom: 10px;
-            padding: 5px;
-            border-radius: 5px;
+            padding: 8px;
+            border-radius: 4px;
         }
+
         .user {
-            background-color: #e6f3ff;
-            text-align: right;
+            background-color: #e3f2fd;
+            margin-left: 20%;
         }
+
         .assistant {
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
+            margin-right: 20%;
         }
+
         .system {
-            background-color: #ffe6e6;
+            background-color: #ffebee;
             font-style: italic;
+        }
+
+        /* DataTable Custom Styling */
+        .table-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .edit-btn {
+            background-color: #2196F3;
+        }
+
+        .delete-btn {
+            background-color: #f44336;
         }
     </style>
 </head>
 <body>
-    <h1>AutoGen Item Manager</h1>
-    <div id="chatBox"></div>
-    <input type="text" id="userInput" placeholder="Type your message...">
-    <button id="sendButton">Send</button>
-    <button id="startChatButton">Start New Chat</button>
+    <div class="container">
+        <h1>Inventory Management System</h1>
+        
+        <div class="datatable-container">
+            <table id="inventoryTable" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Item Code</th>
+                        <th>Description</th>
+                        <th>Unit ID</th>
+                        <th>Cost Price</th>
+                        <th>Selling Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
+    <div class="chat-container">
+        <div class="chat-header">
+            <span>AutoGen Item Manager</span>
+            <i class="fas fa-chevron-down" id="toggleChat"></i>
+        </div>
+        <div class="chat-body">
+            <div id="chatBox"></div>
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Type your message...">
+                <button class="btn btn-primary" id="sendButton">Send</button>
+                <button class="btn btn-secondary" id="startChatButton">New Chat</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
     <script>
+    
+    
+    
+    // DataTable Initialization
+    // Replace your current DataTable initialization with this:
+    $(document).ready(function() {
+    console.log("Initializing DataTable...");
+    
+    const table = $('#inventoryTable').DataTable({
+        processing: true,
+        serverSide: false,
+        ajax: {
+            url: 'http://localhost:5008/api/get_items',
+            type: 'GET',
+            dataSrc: function(response) {
+                console.log("Received data from server:", response);
+                if (response.error) {
+                    console.error("Server returned error:", response.error);
+                    return [];
+                }
+                return response.data || [];
+            },
+            error: function(xhr, error, thrown) {
+                console.error("Ajax error:", error);
+                console.error("Server response:", xhr.responseText);
+            }
+        },
+        columns: [
+            { data: 'ItemCode' },
+            { data: 'ItemDescription' },
+            { data: 'UnitID' },
+            { 
+                data: 'CostPrice',
+                render: function(data) {
+                    return parseFloat(data).toFixed(2);
+                },
+                className: 'text-right'
+            },
+            { 
+                data: 'SellingPrice',
+                render: function(data) {
+                    return parseFloat(data).toFixed(2);
+                },
+                className: 'text-right'
+            },
+            { 
+                data: null,
+                orderable: false,
+                searchable: false,
+                className: 'text-center',
+                defaultContent: '<div class="table-actions">' +
+                    '<button class="action-btn edit-btn"><i class="fas fa-edit"></i></button>' +
+                    '<button class="action-btn delete-btn"><i class="fas fa-trash"></i></button>' +
+                    '</div>'
+            }
+        ],
+        responsive: true,
+        dom: '<"top"Bf>rt<"bottom"lip>',
+        buttons: [
+            {
+                text: '<i class="fas fa-sync"></i> Refresh',
+                className: 'btn btn-primary',
+                action: function (e, dt, node, config) {
+                    dt.ajax.reload(null, false);
+                }
+            },
+            {
+                text: '<i class="fas fa-plus"></i> Add New',
+                className: 'btn btn-success',
+                action: function () {
+                    // Trigger the chat to add new item
+                    startChat();
+                }
+            }
+        ],
+        language: {
+            processing: "Loading...",
+            zeroRecords: "No records found",
+            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+            infoEmpty: "Showing 0 to 0 of 0 entries",
+            infoFiltered: "(filtered from _MAX_ total entries)"
+        },
+        drawCallback: function(settings) {
+            console.log("Table draw complete", settings);
+        }
+    });
+
+    // Handle edit button click
+    $('#inventoryTable').on('click', '.edit-btn', function() {
+        const row = table.row($(this).closest('tr')).data();
+        console.log('Editing item:', row);
+    });
+
+    // Handle delete button click
+    $('#inventoryTable').on('click', '.delete-btn', function() {
+        const row = table.row($(this).closest('tr')).data();
+        if (!row) return;
+
+        if (confirm(`Are you sure you want to delete item ${row.ItemCode}?`)) {
+            $.ajax({
+                url: `http://localhost:5008/api/delete_item/${row.ItemCode}`,
+                type: 'DELETE',
+                success: function(response) {
+                    table.ajax.reload(null, false);
+                    alert('Item deleted successfully');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Delete error:', error);
+                    alert('Error deleting item. Please try again.');
+                }
+            });
+        }
+    });
+
+    // Auto refresh every 30 seconds
+    setInterval(function() {
+        table.ajax.reload(null, false);
+    }, 30000);
+
+    // Make refresh function globally available
+    window.refreshInventoryTable = function() {
+        table.ajax.reload(null, false);
+    };
+});
+
+    // Edit button handler
+   
+//     // Expose refresh function globally
+//     window.refreshInventoryTable = function() {
+//         table.ajax.reload(null, false);
+//     };
+// });
+
+        // Chat functionality
         const chatBox = document.getElementById('chatBox');
         const userInput = document.getElementById('userInput');
         const sendButton = document.getElementById('sendButton');
         const startChatButton = document.getElementById('startChatButton');
+        const toggleChat = document.getElementById('toggleChat');
+        const chatBody = document.querySelector('.chat-body');
 
         let chatStarted = false;
         let pollingInterval;
+
+        // Toggle chat
+        toggleChat.addEventListener('click', function() {
+            chatBody.style.display = chatBody.style.display === 'none' ? 'flex' : 'none';
+            this.className = chatBody.style.display === 'none' ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+        });
 
         startChatButton.addEventListener('click', startChat);
         sendButton.addEventListener('click', sendMessage);
@@ -145,7 +404,6 @@
             fetch('http://localhost:5008/api/get_message')
             .then(response => response.json())
             .then(data => {
-                console.log('Received data:', data);  // Log all received data
                 if (data.message) {
                     if (typeof data.message === 'string') {
                         addMessage('Assistant', data.message);
@@ -162,9 +420,37 @@
             })
             .catch((error) => {
                 console.error('Error:', error);
-                addMessage('System', 'Error receiving message. Please check your connection.');
             });
         }
+
+        function pollMessages() {
+    fetch('http://localhost:5008/api/get_message')
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            if (typeof data.message === 'string') {
+                addMessage('Assistant', data.message);
+            } else if (data.message.user && data.message.message) {
+                // Check for refresh message
+                if (data.message.message === 'refresh_table') {
+                    // Refresh the DataTable
+                    $('#inventoryTable').DataTable().ajax.reload(null, false);
+                } else {
+                    addMessage(data.message.user, data.message.message);
+                }
+            }
+        }
+        if (data.chat_status === 'ended') {
+            chatStarted = false;
+            addMessage('System', 'Chat ended.');
+            clearInterval(pollingInterval);
+            startChatButton.disabled = false;
+        }
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
     </script>
 </body>
 </html>
